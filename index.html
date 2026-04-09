@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Granos | Dashboard n8n</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #27ae60;
+        }
+        body { 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+        }
+        .dashboard {
+            width: 90%;
+            max-width: 1100px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+        h1 { color: var(--primary); margin: 0; font-size: 24px; }
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .online { background: #d4edda; color: #155724; }
+        .offline { background: #f8d7da; color: #721c24; }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 450px;
+            width: 100%;
+        }
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3); }
+        button:active { transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <header>
+        <div>
+            <h1>Logística de Camiones</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Ingreso por tipo de grano (Trigo, Soja, Maíz)</p>
+        </div>
+        <div id="status" class="status-badge offline">n8n Desconectado</div>
+    </header>
+
+    <div class="chart-wrapper">
+        <canvas id="mainChart"></canvas>
+    </div>
+
+    <div style="margin-top: 25px; display: flex; gap: 10px;">
+        <button onclick="updateData()">Actualizar Dashboard</button>
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURACIÓN TÉCNICA ---
+    // Sustituye por la URL de producción de tu n8n
+    const N8N_URL = 'https://TU_INSTANCIA_N8N.com/webhook/get-grain-data'; 
+    
+    let myChart;
+    const statusBadge = document.getElementById('status');
+
+    async function updateData() {
+        try {
+            const response = await fetch(N8N_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error('Error en n8n');
+            
+            const data = await response.json();
+            renderChart(data);
+            
+            statusBadge.innerText = 'n8n Online';
+            statusBadge.className = 'status-badge online';
+        } catch (err) {
+            console.error(err);
+            statusBadge.innerText = 'Error de Conexión';
+            statusBadge.className = 'status-badge offline';
+            // Cargamos datos dummy por si n8n no responde para que veas el gráfico
+            loadDummyData();
+        }
+    }
+
+    function renderChart(items) {
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        
+        const labels = items.map(i => i.fecha);
+        const soja = items.map(i => i.camiones_soja);
+        const trigo = items.map(i => i.camiones_trigo);
+        const maiz = items.map(i => i.camiones_maiz);
+
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Soja', data: soja, backgroundColor: '#2ecc71' },
+                    { label: 'Trigo', data: trigo, backgroundColor: '#f1c40f' },
+                    { label: 'Maíz', data: maiz, backgroundColor: '#e67e22' }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    function loadDummyData() {
+        const dummy = [
+            { fecha: '2024-05-01', camiones_soja: 10, camiones_trigo: 5, camiones_maiz: 8 },
+            { fecha: '2024-05-02', camiones_soja: 15, camiones_trigo: 2, camiones_maiz: 12 },
+            { fecha: '2024-05-03', camiones_soja: 8, camiones_trigo: 10, camiones_maiz: 5 }
+        ];
+        renderChart(dummy);
+    }
+
+    // Carga inicial
+    updateData();
+</script>
+
+</body>
+</html>
