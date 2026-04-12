@@ -166,7 +166,7 @@
             document.getElementById('rofex-table-container').innerHTML = '<div class="loader-container"><div class="spinner"></div></div>';
 
             const baseUrl = `https://apicem.matbarofex.com.ar/api/v2/downloads/closing-prices?segment=${segment}&type=FUT&from=${from}&to=${to}&format=CSV&market=ROFX&version=2`;
-            const url = `https://corsproxy.io/?${encodeURIComponent(baseUrl)}`;
+            const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(baseUrl)}`;
 
             try {
                 const res = await fetch(url);
@@ -301,7 +301,7 @@
             const hasta = encodeURIComponent(fmtDateAR(to));
 
             const baseUrl = `https://siocarnes.magyp.gob.ar/GrillaSIOCarnes/GetResumenPrecios?order=asc&desde=${desde}&hasta=${hasta}&id_zona=-1&id_Animal=${animal}`;
-            const url = `https://corsproxy.io/?${encodeURIComponent(baseUrl)}`;
+            const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(baseUrl)}`;
 
             try {
                 const res = await fetch(url);
