@@ -316,7 +316,8 @@
         // Handle iframe load event
         iframe.onload = () => {
             iframe.classList.add('loaded');
-            // loader stays behind the opaque iframe, no need to hide aggressively
+            // Hide loader since iframe bodies are transparent
+            if (loader) loader.style.display = 'none';
         };
 
         function loadPage(url, element) {
@@ -327,6 +328,7 @@
 
             // Trigger load visual
             iframe.classList.remove('loaded');
+            if (loader) loader.style.display = 'block';
             
             // Switch src after a tiny delay for smooth animation
             setTimeout(() => {

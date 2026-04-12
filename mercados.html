@@ -165,7 +165,8 @@
             btn.textContent = '⏳ Descargando CSV...';
             document.getElementById('rofex-table-container').innerHTML = '<div class="loader-container"><div class="spinner"></div></div>';
 
-            const url = `https://apicem.matbarofex.com.ar/api/v2/downloads/closing-prices?segment=${segment}&type=FUT&from=${from}&to=${to}&format=CSV&market=ROFX&version=2`;
+            const baseUrl = `https://apicem.matbarofex.com.ar/api/v2/downloads/closing-prices?segment=${segment}&type=FUT&from=${from}&to=${to}&format=CSV&market=ROFX&version=2`;
+            const url = `https://corsproxy.io/?${encodeURIComponent(baseUrl)}`;
 
             try {
                 const res = await fetch(url);
@@ -299,7 +300,8 @@
             const desde = encodeURIComponent(fmtDateAR(from));
             const hasta = encodeURIComponent(fmtDateAR(to));
 
-            const url = `https://siocarnes.magyp.gob.ar/GrillaSIOCarnes/GetResumenPrecios?order=asc&desde=${desde}&hasta=${hasta}&id_zona=-1&id_Animal=${animal}`;
+            const baseUrl = `https://siocarnes.magyp.gob.ar/GrillaSIOCarnes/GetResumenPrecios?order=asc&desde=${desde}&hasta=${hasta}&id_zona=-1&id_Animal=${animal}`;
+            const url = `https://corsproxy.io/?${encodeURIComponent(baseUrl)}`;
 
             try {
                 const res = await fetch(url);
