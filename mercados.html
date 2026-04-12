@@ -166,12 +166,14 @@
             document.getElementById('rofex-table-container').innerHTML = '<div class="loader-container"><div class="spinner"></div></div>';
 
             const baseUrl = `https://apicem.matbarofex.com.ar/api/v2/downloads/closing-prices?segment=${segment}&type=FUT&from=${from}&to=${to}&format=CSV&market=ROFX&version=2`;
-            const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(baseUrl)}`;
+            const url = `https://api.allorigins.win/get?url=${encodeURIComponent(baseUrl)}`;
 
             try {
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const csvText = await res.text();
+                const proxyData = await res.json();
+                if (!proxyData.contents) throw new Error("Respuesta vacía del servidor origen");
+                const csvText = proxyData.contents;
 
                 Papa.parse(csvText, {
                     header: true,
@@ -224,17 +226,32 @@
             document.getElementById('rofex-kpis').innerHTML = kpisHtml;
 
             // Table
-            const displayCols = cols.slice(0, 8); // Limit columns for readability
+            const preferredCols = ['PRODUCTO', 'TIPO CONTRATO', 'ANTERIOR', 'MINIMO', 'MAXIMO', 'ULTIMO', 'AJUSTE / PRIMA REF.', 'VAR %'];
+            let displayCols = preferredCols.filter(c => cols.includes(c));
+            if (displayCols.length < 3) displayCols = cols.slice(0, 8); // fallback
+
             let tableHtml = '<table class="rofex-table"><thead><tr>';
-            displayCols.forEach(c => { tableHtml += `<th>${c}</th>`; });
+            displayCols.forEach(c => { tableHtml += `<th>${c.replace(/ /g, '<br>')}</th>`; });
             tableHtml += '</tr></thead><tbody>';
             data.slice(0, 50).forEach(row => {
                 tableHtml += '<tr>';
-                displayCols.forEach(c => { tableHtml += `<td>${row[c] || '—'}</td>`; });
+                displayCols.forEach(c => { 
+                    let val = row[c] || '—';
+                    // Intentar formatear números amigables si no es texto
+                    if (val !== '—' && !isNaN(parseFloat(val.replace(/,/g, '.'))) && !c.includes('TIPO')) {
+                        const num = parseFloat(val.replace(/,/g, '.'));
+                        val = num.toLocaleString('es-AR', {maximumFractionDigits: 2});
+                        if (c === 'VAR %') {
+                            const color = num > 0 ? 'var(--success)' : (num < 0 ? 'var(--danger)' : 'inherit');
+                            val = `<span style="color:${color}; font-weight:600;">${num > 0 ? '+'+val : val}%</span>`;
+                        }
+                    }
+                    tableHtml += `<td>${val}</td>`; 
+                });
                 tableHtml += '</tr>';
             });
             if (data.length > 50) {
-                tableHtml += `<tr><td colspan="${displayCols.length}" style="text-align:center;color:var(--text-muted);font-size:0.8rem;">... y ${data.length - 50} registros más</td></tr>`;
+                tableHtml += `<tr><td colspan="${displayCols.length}" style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:16px;">... y ${data.length - 50} registros más. Exportá para ver todo.</td></tr>`;
             }
             tableHtml += '</tbody></table>';
             document.getElementById('rofex-table-container').innerHTML = tableHtml;
@@ -301,12 +318,14 @@
             const hasta = encodeURIComponent(fmtDateAR(to));
 
             const baseUrl = `https://siocarnes.magyp.gob.ar/GrillaSIOCarnes/GetResumenPrecios?order=asc&desde=${desde}&hasta=${hasta}&id_zona=-1&id_Animal=${animal}`;
-            const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(baseUrl)}`;
+            const url = `https://api.allorigins.win/get?url=${encodeURIComponent(baseUrl)}`;
 
             try {
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
+                const proxyData = await res.json();
+                if (!proxyData.contents) throw new Error("Respuesta vacía del servidor origen");
+                const json = JSON.parse(proxyData.contents);
                 const items = json.value || json || [];
 
                 if (items.length === 0) {
